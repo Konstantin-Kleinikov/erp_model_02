@@ -9,6 +9,11 @@
       {% with request.resolver_match.view_name as view_name %}
         <ul class="nav  nav-pills">
           <li class="nav-item">
+            <a class="nav-link {% if view_name == 'common:index' %} text-white {% endif %}" href="{% url 'common:index' %}">
+              Main Page
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link {% if view_name == 'help_pages:about' %} text-white {% endif %}" href="{% url 'help_pages:about' %}">
               About project
             </a>

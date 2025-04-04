@@ -1,0 +1,72 @@
+[
+{
+  "model": "common.currency",
+  "pk": "CNY",
+  "fields": {
+    "created_at": "2025-02-20T23:28:21.682Z",
+    "created_by": "kkleinikov",
+    "modified_at": null,
+    "modified_by": "",
+    "note": "",
+    "name": "Юань ",
+    "iso_code": "CNY",
+    "numeric_code": 156
+  }
+},
+{
+  "model": "common.currency",
+  "pk": "EUR",
+  "fields": {
+    "created_at": "2025-02-20T23:28:21.682Z",
+    "created_by": "kkleinikov",
+    "modified_at": null,
+    "modified_by": "",
+    "note": "",
+    "name": "Евро",
+    "iso_code": "EUR",
+    "numeric_code": 978
+  }
+},
+{
+  "model": "common.currency",
+  "pk": "RSD",
+  "fields": {
+    "created_at": "2025-02-20T23:28:21.682Z",
+    "created_by": "kkleinikov",
+    "modified_at": null,
+    "modified_by": "",
+    "note": "",
+    "name": "Сербский динар ",
+    "iso_code": "RSD",
+    "numeric_code": 941
+  }
+},
+{
+  "model": "common.currency",
+  "pk": "RUB",
+  "fields": {
+    "created_at": "2025-02-20T23:28:21.682Z",
+    "created_by": "kkleinikov",
+    "modified_at": null,
+    "modified_by": "",
+    "note": "",
+    "name": "Российский рубль",
+    "iso_code": "RUB",
+    "numeric_code": 643
+  }
+},
+{
+  "model": "common.currency",
+  "pk": "USD",
+  "fields": {
+    "created_at": "2025-02-20T23:28:21.682Z",
+    "created_by": "kkleinikov",
+    "modified_at": null,
+    "modified_by": "",
+    "note": "",
+    "name": "Доллар США",
+    "iso_code": "USD",
+    "numeric_code": 840
+  }
+}
+]

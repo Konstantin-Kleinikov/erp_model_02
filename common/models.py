@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 from core.models import AuditTrailModel, NoteModel
 
@@ -31,3 +32,9 @@ class Currency(AuditTrailModel, NoteModel):
 
     def __str__(self):
         return self.code
+
+    def get_absolute_url(self):
+        return reverse(
+            'common:currency_detail',
+            kwargs={'currency_code': self.code},
+        )
