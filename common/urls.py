@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .views import CurrencyRateCreateView, get_currency_rates, download_rates
 
 app_name = 'common'
 urlpatterns = [
@@ -30,4 +31,31 @@ urlpatterns = [
         views.CurrencyDeleteView.as_view(),
         name='currency_delete'
     ),
+    path(
+        'currency_rates/',
+        views.CurrencyRateAllListView.as_view(),
+        name='currency_rates'
+    ),
+    path(
+        'currency_rates/<str:date_str>/',
+        views.CurrencyRateDateListView.as_view(),
+        name='currency_rates_date'
+    ),
+    path(
+        'currency_rates/<str:currency_code>/',
+        views.CurrencyRateListView.as_view(),
+        name='currency_rates_currency'
+    ),
+    path(
+        'currency_rates/',
+        views.CurrencyRateListView.as_view(),
+        name='currency_rates_currency'
+    ),
+    path(
+        'currency_rates/create/<str:date_str>/',
+        CurrencyRateCreateView.as_view(),
+        name='currency_rates_create'
+    ),
+    path('get_currency_rates/', get_currency_rates, name='get_currency_rates'),
+    path('download_rates/', download_rates, name='download_rates'),
 ]

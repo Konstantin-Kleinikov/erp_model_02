@@ -4,6 +4,7 @@ from django.test.client import Client
 from django.urls import reverse
 
 from common.models import Currency
+from erp import settings
 
 
 @pytest.fixture
@@ -38,8 +39,7 @@ def url_currency_list():
 
 @pytest.fixture
 def url_users_login():
-    url = reverse('users:login')
-    return url
+    return settings.LOGIN_URL
 
 
 @pytest.fixture

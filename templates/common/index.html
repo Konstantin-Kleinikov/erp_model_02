@@ -3,6 +3,14 @@
   Main Page
 {% endblock %}
 {% block content %}
-  <a href="{% url 'common:currency_list' %}"><h2>Currencies</h2></a>
-  <div><small>Pages to maintain currencies and currency rates.</small></div>
+  <ul>
+    <li style="margin-bottom: 20px;">
+        <a href="{% url 'common:currency_list' %}"><h3>Currencies</h3></a>
+        <small>Pages to view and maintain currencies.</small>
+      </li>
+      <li style="margin-bottom: 20px;">
+        <a href="{% url 'common:currency_rates' %}"><h3>Currencies Rates</h3></a>
+        <small>Pages to view downloaded currency rates.</small>
+      </li>
+  </ul>
 {% endblock %}

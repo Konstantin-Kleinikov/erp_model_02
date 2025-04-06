@@ -38,3 +38,30 @@ class Currency(AuditTrailModel, NoteModel):
             'common:currency_detail',
             kwargs={'currency_code': self.code},
         )
+
+
+class CurrencyRate(AuditTrailModel):
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.CASCADE,
+        related_name='rates',
+        verbose_name='Currency',
+    )
+    rate_date = models.DateField(blank=False, null=False)
+    nominal = models.PositiveSmallIntegerField(default=1)
+    rate = models.FloatField(blank=False, null=False)
+
+    class Meta:
+        ordering = ['-rate_date', 'currency']
+        verbose_name = 'Currency Rate'
+        verbose_name_plural = 'Currency Rates'
+        unique_together = ('currency', 'rate_date')
+
+    def __str__(self):
+        return f'{self.currency.code} - {self.rate_date}'
+
+    def get_absolute_url(self):
+        return reverse(
+            'common:currency_rates_date',
+            kwargs={'date': self.rate_date},
+        )
