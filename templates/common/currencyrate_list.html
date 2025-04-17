@@ -30,7 +30,10 @@
           <tbody>
             {% for currency_rate in currencyrate_list %}
             <tr>
-              <td>{{ currency_rate.rate_date }}</td>
+              <td>
+                <a href="{% url 'common:currency_rates_detail' currency_rate.currency.code currency_rate.rate_date|date:'Y-m-d' %}">
+                {{ currency_rate.rate_date }}
+              </td>
               <td>{{ currency_rate.currency }}</td>
               <td>{{ currency_rate.rate }}</td>
               <td>{{ currency_rate.nominal }}</td>

@@ -1,21 +1,33 @@
 """Module for views of application common."""
+import logging
+import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from http import HTTPStatus
 
+import requests
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   TemplateView, UpdateView)
-import requests
 
 from .constants import PAGINATOR_VALUE
 from .forms import DownloadRatesForm
 from .mixins import CurrencyMixin, CurrencyRateMixin
 from .models import Currency, CurrencyRate
+
+# TODO Not working
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - '
+           '%(filename)s->%(funcName)s:%(lineno)d, - %(message)s',
+    level=logging.DEBUG,
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 
 class IndexView(TemplateView):
@@ -76,7 +88,11 @@ class CurrencyRateListView(LoginRequiredMixin, ListView):
     paginate_by = PAGINATOR_VALUE
 
 
-class CurrencyRateCreateView(LoginRequiredMixin, CurrencyRateMixin, CreateView):
+class CurrencyRateCreateView(
+    LoginRequiredMixin,
+    CurrencyRateMixin,
+    CreateView
+):
     pk_url_kwarg = 'rate_date'
 
     def get_initial(self):
@@ -85,16 +101,71 @@ class CurrencyRateCreateView(LoginRequiredMixin, CurrencyRateMixin, CreateView):
         return initial
 
 
+class CurrencyRateDetailView(
+    LoginRequiredMixin,
+    CurrencyRateMixin,
+    DetailView
+):
+    def get_object(self, queryset=None):
+        currency_code = self.kwargs.get('currency_code')
+        rate_date = self.kwargs.get('date_str')
+        try:
+            return CurrencyRate.objects.get(
+                currency__code=currency_code,
+                rate_date=rate_date
+            )
+        except CurrencyRate.DoesNotExist:
+            raise Http404(f"CurrencyRate with currency '{currency_code}' "
+                          f"and date '{rate_date}' does not exist."
+                          )
+
+
+class CurrencyRateEditView(
+    LoginRequiredMixin,
+    CurrencyRateMixin,
+    UpdateView
+):
+    pass
+
+
+class CurrencyRateDeleteView(
+    LoginRequiredMixin,
+    CurrencyRateMixin,
+    DeleteView
+):
+    pass
+
+
 def get_currency_rates(request):
-    date_str = request.GET.get('rate_date', timezone.now().date().strftime('%Y-%m-%d'))
-    # Преобразуем строку даты в формат dd/mm/yyyy
+    date_str = request.GET.get(
+        'rate_date',
+        timezone.now().date().strftime('%Y-%m-%d')
+    )
+    # Convert date string to dd/mm/yyyy format
     date_req = datetime.strptime(date_str, '%Y-%m-%d').strftime('%d/%m/%Y')
     url = f'http://www.cbr.ru/scripts/XML_daily.asp?date_req={date_req}'
 
+    logging.debug(f'Sending GET request to {url}')
     response = requests.get(url)
+    logging.debug(
+        f'Response from GET request to {url}: '
+        f'{response.status_code}, {response.text}'
+    )
+
     if response.status_code == HTTPStatus.OK:
         tree = ET.ElementTree(ET.fromstring(response.content))
         root = tree.getroot()
+
+        # Fetch all currencies and existing rates in one query
+        rate_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        existing_rates = set(
+            CurrencyRate.objects.filter(rate_date=rate_date)
+            .values_list('currency__code', flat=True)
+        )
+        currencies = {
+            currency.code: currency
+            for currency in Currency.objects.all()
+        }
 
         rates = []
         for currency in root.findall('Valute'):
@@ -102,40 +173,32 @@ def get_currency_rates(request):
             value = float(currency.find('Value').text.replace(',', '.'))
             nominal = int(currency.find('Nominal').text)
 
-            # Check if the Currency instance exists
-            try:
-                currency_instance = Currency.objects.get(code=code)
-                rate_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-
-                # Check if the CurrencyRate instance already exists
-                if not (CurrencyRate.objects.filter(
-                        currency=currency_instance,
-                        rate_date=rate_date
+            # Check if the currency exists and rate is not already added
+            if code in currencies and code not in existing_rates:
+                CurrencyRate.objects.create(
+                    currency=currencies[code],
+                    rate_date=rate_date,
+                    nominal=nominal,
+                    rate=value,
+                    created_by=request.user.username,
                 )
-                        .exists()):
-                    # Create and save the new CurrencyRate instance
-                    CurrencyRate.objects.create(
-                        currency=currency_instance,
-                        rate_date=rate_date,
-                        nominal=nominal,
-                        rate=value,
-                        created_by=request.user.username,
-                    )
-                    rates.append({'code': code, 'value': value, 'nominal': nominal})
-            except Currency.DoesNotExist:
-                # Skip if the currency does not exist
-                continue
+                rates.append({'code': code, 'value': value, 'nominal': nominal})
 
-        # return render(request, 'common/currencyrate_list.html', {'date': date_str, 'rates': rates})
-        return HttpResponseRedirect(
-            reverse('common:currency_rates_currency',
-                    )
+        return render(
+            request,
+            'common/download_rates.html',
+            {
+                'form': DownloadRatesForm(initial={'rate_date': date_str}),
+                'rates': rates
+            }
         )
     else:
+        logging.error(f'Failed to fetch data from {url}')
         return HttpResponse(
             'Error fetching data from the Bank of Russia',
             status=HTTPStatus.INTERNAL_SERVER_ERROR
         )
+
 
 def download_rates(request):
     initial_data = {'rate_date': timezone.now().date()}
