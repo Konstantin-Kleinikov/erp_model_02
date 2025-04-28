@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 import requests
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -16,7 +16,7 @@ from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
 
 from .constants import PAGINATOR_VALUE
 from .forms import DownloadRatesForm
-from .mixins import CurrencyMixin, CurrencyRateMixin
+from .mixins import CurrencyMixin, CurrencyRateDetailMixin, CurrencyRateMixin
 from .models import Currency, CurrencyRate
 
 # TODO Not working
@@ -73,19 +73,63 @@ class CurrencyDeleteView(LoginRequiredMixin, CurrencyMixin, DeleteView):
     success_url = reverse_lazy('common:currency_list')
 
 
-class CurrencyRateAllListView(LoginRequiredMixin, ListView):
+class CurrencyRateListView(LoginRequiredMixin, ListView):
     model = CurrencyRate
     paginate_by = PAGINATOR_VALUE
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Currency Rates'
+        context['header'] = 'Currency Rates'
+        return context
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.select_related('currency')
+        return queryset
 
 class CurrencyRateDateListView(LoginRequiredMixin, ListView):
     model = CurrencyRate
     paginate_by = PAGINATOR_VALUE
+    template_name = 'common/currencyrate_list.html'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        rate_date = datetime.strptime(self.kwargs.get('date_str'), '%Y-%m-%d').date()
+        if rate_date:
+            queryset = (queryset.filter(rate_date=rate_date)
+                        .select_related('currency')
+                        )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        rate_date = self.kwargs.get('date_str')
+        context['title'] = f'Currency Rates by Date {rate_date}'
+        context['header'] = f'Currency Rates by Date {rate_date}'
+        return context
 
 
-class CurrencyRateListView(LoginRequiredMixin, ListView):
+class CurrencyRateCurrencyListView(LoginRequiredMixin, ListView):
     model = CurrencyRate
     paginate_by = PAGINATOR_VALUE
+    template_name = 'common/currencyrate_list.html'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        currency = self.kwargs.get('currency_code')
+        if currency:
+            queryset = (queryset.filter(currency=currency)
+                        .select_related('currency')
+                        )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        currency = self.kwargs.get('currency')
+        context['title'] = f'Currency Rates by {currency}'
+        context['header'] = f'Currency Rates by {currency}'
+        return context
 
 
 class CurrencyRateCreateView(
@@ -104,33 +148,28 @@ class CurrencyRateCreateView(
 class CurrencyRateDetailView(
     LoginRequiredMixin,
     CurrencyRateMixin,
+    CurrencyRateDetailMixin,
     DetailView
 ):
-    def get_object(self, queryset=None):
-        currency_code = self.kwargs.get('currency_code')
-        rate_date = self.kwargs.get('date_str')
-        try:
-            return CurrencyRate.objects.get(
-                currency__code=currency_code,
-                rate_date=rate_date
-            )
-        except CurrencyRate.DoesNotExist:
-            raise Http404(f"CurrencyRate with currency '{currency_code}' "
-                          f"and date '{rate_date}' does not exist."
-                          )
-
+    pass
 
 class CurrencyRateEditView(
     LoginRequiredMixin,
     CurrencyRateMixin,
+    CurrencyRateDetailMixin,
     UpdateView
 ):
-    pass
+    def form_valid(self, form):
+        # Update the modified_by field with the current user's username
+        form.instance.modified_by = self.request.user.username
+        return super().form_valid(form)
+    # TODO fields are not populated with values on 'currency_rates_edit'
 
 
 class CurrencyRateDeleteView(
     LoginRequiredMixin,
     CurrencyRateMixin,
+    CurrencyRateDetailMixin,
     DeleteView
 ):
     pass

@@ -34,41 +34,36 @@ urlpatterns = [
     ),
     path(
         'currency_rates/',
-        views.CurrencyRateAllListView.as_view(),
+        views.CurrencyRateListView.as_view(),
         name='currency_rates'
     ),
     path(
-        'currency_rates/<str:date_str>/',
-        views.CurrencyRateDateListView.as_view(),
-        name='currency_rates_date'
-    ),
-    path(
-        'currency_rates/<str:currency_code>/',
-        views.CurrencyRateListView.as_view(),
-        name='currency_rates_currency'
-    ),
-    path(
-        'currency_rates/',
-        views.CurrencyRateListView.as_view(),
-        name='currency_rates_currency'
-    ),
-    path(
-        'currency_rates/create/<str:date_str>/',
-        CurrencyRateCreateView.as_view(),
-        name='currency_rates_create'
-    ),
-    path(
-        'currency_rates/<str:currency_code>/<str:date_str>/',
+        'currency_rates/<int:pk>/',
         CurrencyRateDetailView.as_view(),
         name='currency_rates_detail'
     ),
     path(
-        'currency_rates/edit/<str:currency_code>/<str:date_str>/',
+        'currency_rates/date/<str:date_str>/',
+        views.CurrencyRateDateListView.as_view(),
+        name='currency_rates_date'
+    ),
+    path(
+        'currency_rates/currency/<str:currency_code>/',
+        views.CurrencyRateCurrencyListView.as_view(),
+        name='currency_rates_currency'
+    ),
+    path(
+        'currency_rates/create/',
+        CurrencyRateCreateView.as_view(),
+        name='currency_rates_create'
+    ),
+    path(
+        'currency_rates/edit/<int:pk>/',
         CurrencyRateEditView.as_view(),
         name='currency_rates_edit'
     ),
     path(
-        'currency_rates/delete/<str:currency_code>/<str:date_str>/',
+        'currency_rates/delete/<int:pk>/',
         CurrencyRateDeleteView.as_view(),
         name='currency_rates_delete'
     ),
