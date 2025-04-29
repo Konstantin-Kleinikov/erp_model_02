@@ -33,3 +33,21 @@ class CurrencyRateForm(forms.ModelForm):
 
 class DownloadRatesForm(forms.Form):
     rate_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+
+
+class CalculateAmountForm(forms.Form):
+    currency = forms.ModelChoiceField(
+        queryset=Currency.objects.all(),
+        label='Currency',
+        required=True
+    )
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Date',
+        required=True
+    )
+    amount = forms.FloatField(
+        label='Currency Amount',
+        required=True,
+        min_value=0
+    )

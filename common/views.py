@@ -11,11 +11,12 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   TemplateView, UpdateView)
 
 from .constants import PAGINATOR_VALUE
-from .forms import DownloadRatesForm
+from .forms import DownloadRatesForm, CalculateAmountForm
 from .mixins import CurrencyMixin, CurrencyRateDetailMixin, CurrencyRateMixin
 from .models import Currency, CurrencyRate
 
@@ -94,19 +95,21 @@ class CurrencyRateDateListView(LoginRequiredMixin, ListView):
     template_name = 'common/currencyrate_list.html'
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         rate_date = datetime.strptime(self.kwargs.get('date_str'), '%Y-%m-%d').date()
         if rate_date:
-            queryset = (queryset.filter(rate_date=rate_date)
-                        .select_related('currency')
-                        )
-        return queryset
+            return (super().get_queryset()
+                    .filter(rate_date=rate_date)
+                    .select_related('currency')
+                    )
+        return super().get_queryset()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         rate_date = self.kwargs.get('date_str')
-        context['title'] = f'Currency Rates by Date {rate_date}'
-        context['header'] = f'Currency Rates by Date {rate_date}'
+        context.update({
+            'title': f'Currency Rates by Date {rate_date}',
+            'header': f'Currency Rates by Date {rate_date}',
+        })
         return context
 
 
@@ -116,19 +119,21 @@ class CurrencyRateCurrencyListView(LoginRequiredMixin, ListView):
     template_name = 'common/currencyrate_list.html'
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         currency = self.kwargs.get('currency_code')
         if currency:
-            queryset = (queryset.filter(currency=currency)
-                        .select_related('currency')
-                        )
-        return queryset
+            return (super().get_queryset()
+                    .filter(currency=currency)
+                    .select_related('currency')
+                    )
+        return super().get_queryset()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        currency = self.kwargs.get('currency')
-        context['title'] = f'Currency Rates by {currency}'
-        context['header'] = f'Currency Rates by {currency}'
+        currency = self.kwargs.get('currency_code')
+        context.update({
+            'title': f'Currency Rates by {currency}',
+            'header': f'Currency Rates by {currency}'
+        })
         return context
 
 
@@ -247,3 +252,45 @@ def download_rates(request):
         'common/download_rates.html',
         {'form': form}
     )
+
+
+class CalculateAmountView(View):
+    template_name = 'common/calculate_amount.html'
+
+    def get(self, request):
+        form = CalculateAmountForm(initial=self.get_initial())
+        return render(request, self.template_name, {'form': form})
+
+    def get_initial(self):
+        return {
+            'date': timezone.now().date(),
+            'amount': 100,
+        }
+
+    def post(self, request):
+        form = CalculateAmountForm(request.POST)
+        result = None
+        error_message = None
+        rate = None
+
+        if form.is_valid():
+            currency = form.cleaned_data['currency']
+            date = form.cleaned_data['date']
+            amount = form.cleaned_data['amount']
+
+            # Find the first available currency rate
+            rate = CurrencyRate.objects.filter(
+                currency=currency, rate_date__lte=date
+            ).order_by('-rate_date').first()
+
+            if rate:
+                result = round(amount * rate.rate, 2)
+            else:
+                error_message = f'Currency rate was not found for {currency} and {date}!'
+
+        return render(request, self.template_name, {
+            'form': form,
+            'result': result,
+            'rate': rate,
+            'error_message': error_message,
+        })

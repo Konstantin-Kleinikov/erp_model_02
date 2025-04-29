@@ -31,7 +31,7 @@ class Currency(AuditTrailModel, NoteModel):
         verbose_name_plural = 'Currencies'
 
     def __str__(self):
-        return self.code
+        return f'{self.code} - {self.name}'
 
     def get_absolute_url(self):
         return reverse(
