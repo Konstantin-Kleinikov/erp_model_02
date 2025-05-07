@@ -22,6 +22,7 @@
             <th scope="col">Created By</th>
             <th scope="col">Modified At</th>
             <th scope="col">Modified By</th>
+            <th scope="col">Edit / Delete</th>
           </tr>
         </thead>
         <tbody>
@@ -32,7 +33,7 @@
               {{ currency_rate.rate_date }}</a>
             </td>
             <td>
-              <a href="{% url 'common:currency_rates_currency' currency_rate.currency %}">
+              <a href="{% url 'common:currency_rates_currency' currency_rate.currency.code %}">
               {{ currency_rate.currency }}</a>
             </td>
             <td>{{ currency_rate.rate }}</td>
@@ -41,6 +42,14 @@
             <td>{{ currency_rate.created_by }}</td>
             <td>{{ currency_rate.modified_at }}</td>
             <td>{{ currency_rate.modified_by }}</td>
+            <td>
+              <a href="{% url 'common:currency_rates_edit' currency_rate.id %}">
+                Edit
+              </a> /
+              <a href="{% url 'common:currency_rates_delete' currency_rate.id %}">
+                Delete
+              </a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

@@ -21,6 +21,8 @@ class CurrencyForm(forms.ModelForm):
 
 
 class CurrencyRateForm(forms.ModelForm):
+    rate_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+
     class Meta:
         model = CurrencyRate
         fields = [

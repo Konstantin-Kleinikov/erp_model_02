@@ -1,5 +1,9 @@
 """Mixins for common application."""
+from locale import currency
+
 from django.http import Http404
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
 
 from common.forms import CurrencyForm, CurrencyRateForm
 from common.models import Currency, CurrencyRate
@@ -18,14 +22,13 @@ class CurrencyRateMixin:
 
 class CurrencyRateDetailMixin:
     def get_object(self, queryset=None):
-        currency_code = self.kwargs.get('currency_code')
-        rate_date = self.kwargs.get('date_str')
-        try:
-            return CurrencyRate.objects.get(
-                currency__code=currency_code,
-                rate_date=rate_date
-            )
-        except CurrencyRate.DoesNotExist:
-            raise Http404(f"CurrencyRate with currency '{currency_code}' "
-                          f"and date '{rate_date}' does not exist."
-                          )
+        pk = self.kwargs.get('pk')
+        currency_rate = get_object_or_404(CurrencyRate, pk=pk)
+        return currency_rate
+
+    def get_success_url(self):
+        rate_date = self.object.rate_date
+        return reverse(
+            'common:currency_rates_date',
+            kwargs={'date_str': rate_date.strftime('%Y-%m-%d')}
+        )

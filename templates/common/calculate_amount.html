@@ -18,7 +18,7 @@
       <div class="card-footer">
         {% if result %}
           <div class="alert alert-success" style="margin-top: 20px;">
-            Calculated Amount (rate = {{ rate.rate }}):
+            Calculated Amount (rate = {{ rate.rate }}/nominal = {{ rate.nominal }}):
             <b>{{ form.data.amount|floatformat:2|intcomma }}</b>
             {{ form.data.currency }} =
             <b>{{ result|floatformat:2|intcomma }}</b> RUB

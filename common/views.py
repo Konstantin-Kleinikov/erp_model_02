@@ -165,10 +165,8 @@ class CurrencyRateEditView(
     UpdateView
 ):
     def form_valid(self, form):
-        # Update the modified_by field with the current user's username
         form.instance.modified_by = self.request.user.username
         return super().form_valid(form)
-    # TODO fields are not populated with values on 'currency_rates_edit'
 
 
 class CurrencyRateDeleteView(
@@ -177,7 +175,11 @@ class CurrencyRateDeleteView(
     CurrencyRateDetailMixin,
     DeleteView
 ):
-    pass
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['currency_rate'] = self.object
+        return context
 
 
 def get_currency_rates(request):
@@ -284,7 +286,7 @@ class CalculateAmountView(View):
             ).order_by('-rate_date').first()
 
             if rate:
-                result = round(amount * rate.rate, 2)
+                result = round((amount * rate.rate)/rate.nominal, 2)
             else:
                 error_message = f'Currency rate was not found for {currency} and {date}!'
 
